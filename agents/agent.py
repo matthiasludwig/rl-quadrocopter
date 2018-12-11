@@ -1,9 +1,9 @@
-from keras import layers, models, optimizers
-from keras import backend as K
+import numpy as np
 
 from agents.actor import Actor
 from agents.critic import Critic
 from agents.noise import OUNoise
+from agents.replaybuffer import ReplayBuffer
 
 
 class DDPG():
