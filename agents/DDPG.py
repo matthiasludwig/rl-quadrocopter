@@ -2,6 +2,7 @@ from keras import layers, models, optimizers
 from keras import backend as K
 from . import Actor
 from . import Critic
+from . import OUNoise
 
 
 
