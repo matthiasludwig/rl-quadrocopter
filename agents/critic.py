@@ -1,7 +1,3 @@
-from keras import layers, models, optimizers
-from keras import backend as K
-
-
 class Critic:
     """Critic (Value) Model."""
 
