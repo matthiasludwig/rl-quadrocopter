@@ -21,7 +21,7 @@ class Task():
 
         self.state_size = self.action_repeat * 6
         self.action_low = 0
-        self.action_high = 900
+        self.action_high = 500  # Original: 900 Reduced to smooth take-off
         self.action_size = 4
 
         # Goal
@@ -29,7 +29,19 @@ class Task():
 
     def get_reward(self):
         """Uses current pose of sim to return reward."""
-        reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()
+        # reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()  # Original reward function
+
+        # Punish deviation in x and y direction harder than z. Square to keep positive
+        x_dev = .1 * (self.sim.pose[0] - self.target_pos[0])**2
+        y_dev = .1 * (self.sim.pose[1] - self.target_pos[1])**2
+        z_dev = (self.sim.pose[2] - self.target_pos[2])**2
+
+        cont_reward = 1.5  # Give a continuing reward of 1.5
+
+        deviation = x_dev + y_dev + z_dev
+
+        reward = cont_reward + deviation
+
         return reward
 
     def step(self, rotor_speeds):
