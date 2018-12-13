@@ -23,6 +23,7 @@ class Task():
         self.action_low = 0
         self.action_high = 500  # Original: 900 Reduced to smooth take-off
         self.action_size = 4
+        self.done = False  # Default it to False
 
         # Goal
         self.target_pos = target_pos if target_pos is not None else np.array([0., 0., 10.]) 
@@ -31,16 +32,23 @@ class Task():
         """Uses current pose of sim to return reward."""
         # reward = 1.-.3*(abs(self.sim.pose[:3] - self.target_pos)).sum()  # Original reward function
 
-        # Punish deviation in x and y direction harder than z. Square to keep positive
-        x_dev = .1 * (self.sim.pose[0] - self.target_pos[0])**2
-        y_dev = .1 * (self.sim.pose[1] - self.target_pos[1])**2
+        # Measure distance in vertical direction from target (take-off)
+        #x_dev = .1 * (self.sim.pose[0] - self.target_pos[0])**2
+        #y_dev = .1 * (self.sim.pose[1] - self.target_pos[1])**2
         z_dev = (self.sim.pose[2] - self.target_pos[2])**2
 
         cont_reward = 1.5  # Give a continuing reward of 1.5
 
-        deviation = x_dev + y_dev + z_dev
+        vertical_vel = 0.5*(self.sim.v[2]) # Giving a reward/punish for vertical velocity
 
-        reward = cont_reward + deviation
+        # penalize crash as per review comment
+        crash = 0
+        if self.done and self.sim.time < self.sim.runtime:
+            crash = -10
+
+        deviation = z_dev  # + x_dev + y_dev
+
+        reward = np.clip((cont_reward + vertical_vel + deviation + crash), -1, 1)  # Normalized the rewards between -1 and 1
 
         return reward
 
@@ -49,11 +57,11 @@ class Task():
         reward = 0
         pose_all = []
         for _ in range(self.action_repeat):
-            done = self.sim.next_timestep(rotor_speeds)  # update the sim pose and velocities
+            self.done = self.sim.next_timestep(rotor_speeds)  # update the sim pose and velocities
             reward += self.get_reward() 
             pose_all.append(self.sim.pose)
         next_state = np.concatenate(pose_all)
-        return next_state, reward, done
+        return next_state, reward, self.done
 
     def reset(self):
         """Reset the sim to start a new episode."""
